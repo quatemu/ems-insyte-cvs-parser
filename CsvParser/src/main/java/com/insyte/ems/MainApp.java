@@ -1,34 +1,27 @@
 package com.insyte.ems;
 
-import com.insyte.ems.utils.CsvParser;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.time.LocalDateTime;
+import com.insyte.ems.utils.parser.csv.CsvParser;
+import com.insyte.ems.utils.parser.csv.Measure;
+
+import java.io.*;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class MainApp {
     public static void main(String... args) throws Exception {
-        /*Scanner scanner = new Scanner(System.in);
-        String filePath = scanner.nextLine();
-        LocalDateTime ldt4 = LocalDateTime.parse("11.1.2013 19:12:23");
-        LocalDateTime ldt3 = LocalDateTime.parse("11.1.1");
-        LocalDateTime ldt5 = LocalDateTime.parse("11.1.2013 19:1");
-        LocalDateTime ldt6 = LocalDateTime.parse("11.1.2013 1:1");
 
-        LocalDateTime ldt1 = LocalDateTime.parse("1.1.2013");
-        LocalDateTime ldt2 = LocalDateTime.parse("111.1.2013");*/
+        CsvParser parser = new CsvParser(new BufferedReader(
+                new FileReader("C:\\Users\\Thomas\\Documents\\GitHub\\ems-insyte-cvs_parser\\CsvParser\\examples\\Умный дом.csv")),
+                "dd.MM.yyyy HH:mm");
+        ArrayList<Measure> measures = parser.getMeasures();
 
+        StringBuilder sb = new StringBuilder();
+        for(Measure measure : measures){
+            sb.append(String.valueOf(measure.DateTime) + ": " + String .valueOf(measure.Value) + "\n");
+        }
 
-
-
-        CsvParser parser = new CsvParser(new BufferedReader(new FileReader("/Examples/Умный дом.csv")), "");
-        ArrayList<String[]> list = parser.getDatas();
-        for(String[] lines : list){
-            for(String line : lines){
-                System.out.print(line + '\t');
-            }
-            System.out.println();
+        File file = new File("output.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write(sb.toString());
         }
     }
 }
