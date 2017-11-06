@@ -73,14 +73,12 @@ public class CsvParser {
             reader.close();
             return measures;
         }
-        catch (IOException ex){
-            ex.printStackTrace();
-            return null;
-        }
+        catch (IOException ex){ ex.printStackTrace(); }
         finally {
             try { reader.close(); }
             catch (IOException ex){ ex.printStackTrace(); }
         }
+        return null;
     }
 
     /**
@@ -96,10 +94,7 @@ public class CsvParser {
                 measure.Value = Double.valueOf(lines[1]);
                 return measure;
             }
-            catch (Exception ex){
-                ex.printStackTrace();
-                return null;
-            }
+            catch (Exception ex){ ex.printStackTrace(); }
         }
         return null;
     }
