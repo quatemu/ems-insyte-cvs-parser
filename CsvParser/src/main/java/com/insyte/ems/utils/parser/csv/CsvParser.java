@@ -2,8 +2,8 @@
  * Парсер csv-файла
  *
  * @author  Артем Кучумов
- * @version 1.1
- * @since   2017-10-27
+ * @version 1.3
+ * @since   13-11-2017
  */
 
 package com.insyte.ems.utils.parser.csv;
@@ -15,45 +15,63 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class CsvParser {
+    private final static int COUNT_OF_COLUMNS = 4;
+
     /**
      * Файл, из которого происходит чтение
      */
     private BufferedReader reader = null;
 
     /**
+     * Список индексов столбцов, по которым нужно искать данные в csv-файле
+     * Index[0] = индекс столбца, в котором находится дата и время измерения
+     * Index[1] = индекс столбца, в котором находится значение измерения
+     * Index[2] = индекс столбца, в котором находится идентификатор устройства
+     * Index[3] = индекс столбца, в котором находится идентификатор источника данных
+     * Если в файле нет значений для некоторого столбца, то индекс равен любому отрицательному числу.
+     * Нумерация столбцов начинается с нуля.
+     */
+    private ColumnNameToIndex indexes = null;
+
+    /**
      * Разделитель данных в строке файла
      */
     private String delimiter = ";";
+    public void setDelimiter(String delimiter){
+        if(delimiter == null){
+            throw new NullPointerException();
+        }
+        this.delimiter = delimiter;
+    }
 
     /**
-     * Шаблон, которому должна удовлетворять дата и время измерения
+     * Шаблон даты и времени измерения
      */
     private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-
-    public CsvParser(BufferedReader reader){
-        this.reader = reader;
-    }
-
-    public CsvParser(BufferedReader reader, DateTimeFormatter dateTimeFormatter){
-        this.reader = reader;
+    public void setDateTimeFormatter(DateTimeFormatter dateTimeFormatter){
+        if(dateTimeFormatter == null){
+            throw new NullPointerException();
+        }
         this.dateTimeFormatter = dateTimeFormatter;
     }
 
-    public CsvParser(BufferedReader reader, String dateTimeFormatterString){
-        this.reader = reader;
+    public void setDateTimeFormatter(String dateTimeFormatterString){
+        if(dateTimeFormatter == null){
+            throw new NullPointerException();
+        }
         this.dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormatterString);
     }
 
-    public CsvParser(BufferedReader reader, String dateTimeFormatterString, String delimiter){
-        this.reader = reader;
-        this.delimiter = delimiter;
-        this.dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormatterString);
-    }
 
-    public CsvParser(BufferedReader reader, DateTimeFormatter dateTimeFormatter, String delimiter){
+    public CsvParser(BufferedReader reader, int[] indexes) {
+        if(reader == null || indexes == null){
+            throw new NullPointerException();
+        }
+        else if(indexes.length != COUNT_OF_COLUMNS){
+            throw new IllegalStateException(String.format("Массив индексов должен состоять из %d значений.", COUNT_OF_COLUMNS));
+        }
         this.reader = reader;
-        this.delimiter = delimiter;
-        this.dateTimeFormatter = dateTimeFormatter;
+        this.indexes = new ColumnNameToIndex(indexes);
     }
 
     /**
@@ -67,8 +85,9 @@ public class CsvParser {
             while((line = reader.readLine()) != null){
                 String[] lines = line.split(delimiter);
                 Measure measure = getMeasure(lines);
-                if(measure != null)
+                if(measure != null){
                     measures.add(measure);
+                }
             }
             reader.close();
             return measures;
@@ -90,8 +109,18 @@ public class CsvParser {
         if(lines != null && lines.length > 1){
             try{
                 Measure measure = new Measure();
-                measure.DateTime = LocalDateTime.parse(lines[0], dateTimeFormatter);
-                measure.Value = Double.valueOf(lines[1]);
+                if(indexes.DateTime >= 0){
+                    measure.DateTime = LocalDateTime.parse(lines[indexes.DateTime], dateTimeFormatter);
+                }
+                if(indexes.Value >= 0){
+                    measure.Value = Double.valueOf(lines[indexes.Value]);
+                }
+                if(indexes.DeviceID >= 0){
+                    measure.DeviceID = Long.valueOf(lines[indexes.DeviceID]);
+                }
+                if(indexes.DataSourceID >= 0){
+                    measure.DataSourceID = Long.valueOf(lines[indexes.DataSourceID]);
+                }
                 return measure;
             }
             catch (Exception ex){ ex.printStackTrace(); }
